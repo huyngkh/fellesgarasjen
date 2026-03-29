@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Garage Tools</title>
+<style>
+body {font-family: Arial; margin:20px; background:#f4f6f8;}
+h1 {text-align:center;}
+input {width:100%; padding:10px; margin-bottom:15px;}
+table {width:100%; border-collapse:collapse; background:white;}
+th, td {padding:10px; border:1px solid #ddd;}
+th {background:#333; color:white;}
+img {width:100px; cursor:pointer;}
+
+/* overlay */
+#overlay {
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.9);
+    display:none;
+    justify-content:center;
+    align-items:center;
+    z-index:9999;
+}
+
+#overlayContent {
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    max-width:90vw;
+    max-height:90vh;
+}
+
+#overlay img {
+    width: auto;
+    max-width:90vw;
+    max-height:80vh;
+}
+
+#overlayCaption {
+    margin-top:10px;
+    color:#fff;
+    font-size:18px;
+    font-weight:bold;
+    text-align:center;
+}
+
+</style>
+</head>
+<body>
+
+<h1>Garage Tool Finder</h1>
+<div id="totalCount" style="margin:10px 0; font-weight:bold;"></div>
+<input type="text" id="search" placeholder="Search tool...">
+
+<table>
+    <thead>
+        <tr>
+            <th>Image</th>
+            <th>Name</th>
+            <th>Brand (Estimated)</th>
+            <th>Description</th>
+        </tr>
+    </thead>
+    <tbody id="tableBody"></tbody>
+</table>
+
+<!-- <div id="overlay" onclick="closeOverlay()">
+    <img id="overlayImg">
+</div> -->
+<div id="overlay" onclick="closeOverlay(event)">
+    <div id="overlayContent">
+        <img id="overlayImg">
+        <div id="overlayCaption"></div>
+    </div>
+</div>
+
+<script>
+const tools = [
+{name:"Teleskop hekkesaks og grensag",brand:"Meec Tools",desc:"A saw that trims hedges and cuts branches",img:"https://xn--kringsjgrendelag-job.net/wp-content/uploads/2024/06/DSC_1484-1024x768.jpg"},
+{name:"Manuell feiemaskin",brand:"Kärcher / Meec",desc:"Sweep outdoor surfaces",img:"https://xn--kringsjgrendelag-job.net/wp-content/uploads/2024/06/DSC_1482-768x1024.jpg"},
+{name:"El. løvblåser",brand:"Meec Tools",desc:"Blow leaves",img:"https://xn--kringsjgrendelag-job.net/wp-content/uploads/2024/06/DSC_1481-1024x768.jpg"},
+{name:"Plenrulle",brand:"Hard Head",desc:"Flatten lawn",img:"https://xn--kringsjgrendelag-job.net/wp-content/uploads/2024/06/DSC_1480-1024x768.jpg"},
+{name:"Mosefjerner",brand:"Meec Tools",desc:"Remove moss",img:"https://xn--kringsjgrendelag-job.net/wp-content/uploads/2024/06/DSC_1479-1024x768.jpg"},
+{name:"Lukeredskap",brand:"Hard Head",desc:"Remove weeds",img:"https://xn--kringsjgrendelag-job.net/wp-content/uploads/2024/06/DSC_1477-768x1024.jpg"},
+{name:"Kvistkverner",brand:"Meec / Stiga",desc:"Shred branches",img:"https://xn--kringsjgrendelag-job.net/wp-content/uploads/2024/06/DSC_1476-768x1024.jpg"},
+{name:"Bensin og manuell klipper",brand:"Stiga / Meec",desc:"Cut grass",img:"https://xn--kringsjgrendelag-job.net/wp-content/uploads/2024/06/DSC_1475-1024x768.jpg"},
+{name:"Drikkebeholder 4L",brand:"Generic",desc:"Keep drinks hot/cold",img:"https://xn--kringsjgrendelag-job.net/wp-content/uploads/2024/06/DSC_1488-768x1024.jpg"},
+{name:"Gjødselspreder",brand:"Hard Head",desc:"Spread fertilizer",img:"https://xn--kringsjgrendelag-job.net/wp-content/uploads/2024/06/DSC_1487-768x1024.jpg"},
+{name:"Krokketsett",brand:"Generic",desc:"Outdoor game set",img:"https://xn--kringsjgrendelag-job.net/wp-content/uploads/2024/06/DSC_1486-1024x768.jpg"},
+{name:"10 stoler",brand:"Generic",desc:"Seating for events",img:"https://xn--kringsjgrendelag-job.net/wp-content/uploads/2024/06/DSC_1485-768x1024.jpg"},
+{name:"Stiger",brand:"Hard Head / Biltema",desc:"Work at height",img:"https://xn--kringsjgrendelag-job.net/wp-content/uploads/2024/06/DSC_1472-768x1024.jpg"},
+{name:"Skrape",brand:"Hard Head",desc:"Scraping surfaces",img:"https://xn--kringsjgrendelag-job.net/wp-content/uploads/2024/06/DSC_1473-768x1024.jpg"},
+{name:"Grill",brand:"Generic",desc:"Outdoor cooking",img:"https://xn--kringsjgrendelag-job.net/wp-content/uploads/2024/06/DSC_1474-1024x768.jpg"},
+{name:"Flisverktøy",brand:"Meec / Biltema",desc:"Tile cutting and laying",img:"https://xn--kringsjgrendelag-job.net/wp-content/uploads/2025/04/DSC_2092-1024x768.jpg"},
+{name:"Sekketralle",brand:"Biltema",desc:"Move heavy items",img:"https://xn--kringsjgrendelag-job.net/wp-content/uploads/2025/05/DSC_2094-768x1024.jpg"}
+];
+let currentIndex = 0;
+let currentList = tools;
+
+function renderTotal(data) {
+    const total=document.getElementById("totalCount");
+    total.innerText = `Total tools: ${data.length}/${tools.length}`;
+}
+
+function renderItems(data){
+    const tbody=document.getElementById("tableBody");
+    tbody.innerHTML="";
+
+    data.forEach((d, index)=>{
+        tbody.innerHTML+=`
+        <tr>
+            <td><img src="${d.img}" onclick="openOverlay(${index})"></td>
+            <td>${d.name}</td>
+            <td>${d.brand}</td>
+            <td>${d.desc}</td>
+        </tr>`;
+    });
+}
+
+function openOverlay(index){
+    currentIndex = index;
+
+    const d = currentList[index];
+
+    document.getElementById("overlay").style.display="flex";
+    document.getElementById("overlayImg").src=d.img;
+    document.getElementById("overlayCaption").innerText=d.name;
+}
+
+function closeOverlay(e){
+    if(e.target.id === "overlay"){
+        document.getElementById("overlay").style.display="none";
+    }
+}
+
+document
+    .getElementById("search")
+    .addEventListener("input", function() {
+        const k=this.value.toLowerCase();
+        const normalizedData = tools.filter(d => d.name.toLowerCase().includes(k) || d.brand.toLowerCase().includes(k)|| d.desc.toLowerCase().includes(k));
+        renderTotal(normalizedData);
+        renderItems(normalizedData);
+    });
+
+document
+    .addEventListener("keydown", function(e){
+        const overlay = document.getElementById("overlay");
+
+        if(overlay.style.display !== "flex") return;
+
+        if(e.key === "ArrowRight"){
+            currentIndex = (currentIndex + 1) % currentList.length;
+            openOverlay(currentIndex);
+        }
+
+        if(e.key === "ArrowLeft"){
+            currentIndex = (currentIndex - 1 + currentList.length) % currentList.length;
+            openOverlay(currentIndex);
+        }
+
+        if(e.key === "Escape"){
+            overlay.style.display = "none";
+        }
+    });
+
+renderTotal(tools);
+renderItems(tools);
+</script>
+
+</body>
+</html>
